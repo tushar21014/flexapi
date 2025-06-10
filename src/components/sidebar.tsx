@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Database, Users, Settings, Puzzle, ImageIcon, Home } from "lucide-react"
+import { Database, Users, Settings, Puzzle, ImageIcon, Home, FileText } from "lucide-react"
 
+// Update the navigation array to include Content Manager
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Content Manager", href: "/content-manager", icon: FileText },
   { name: "Content Types", href: "/content-types", icon: Database },
   { name: "Users", href: "/users", icon: Users },
 ]
@@ -31,7 +33,7 @@ export function Sidebar() {
           <div className="w-8 h-8 bg-[#4945ff] rounded flex items-center justify-center">
             <span className="text-white font-bold text-sm">F</span>
           </div>
-          <span className="font-semibold text-lg">Flex Api</span>
+          <span className="font-semibold text-lg">FlexiApi</span>
         </div>
       </div>
 

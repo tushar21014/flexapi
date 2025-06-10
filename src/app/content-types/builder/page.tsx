@@ -68,12 +68,48 @@ export default function ContentTypeBuilderPage() {
     setFields((prev) => prev.filter((field) => field.id !== id))
   }
 
-  const handleSave = () => {
-    // Simulate saving
-    console.log("Saving content type:", { contentType, fields })
-    router.push("/content-types")
-  }
+  const api = process.env.NEXT_PUBLIC_SCHEMA_URL
 
+  const handleSave = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      alert("You must be logged in.")
+      return
+    }
+  
+    // Build fields object from array of fields
+    const fieldsObj = fields.reduce((acc: { [key: string]: string }, field) => {
+      acc[field.name] = field.type
+      return acc
+    }, {})
+  
+    const payload = {
+      name: contentType.name,
+      description: contentType.description,
+      fields: fieldsObj
+    }
+  
+    console.log("Sending payload:", payload)
+  
+    const res = await fetch(`${api}/createSchema`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload)
+    })
+  
+    if (res.ok) {
+      const result = await res.json()
+      console.log("Schema created:", result)
+      router.push("/content-types")
+    } else {
+      const error = await res.json()
+      alert("Failed to create schema: " + error.message)
+    }
+  }
+  
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />

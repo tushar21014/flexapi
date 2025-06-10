@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -67,6 +67,34 @@ export default function ContentTypesPage() {
     },
   ])
 
+  const handleGetSchemas = async() => {
+    const token = localStorage.getItem("token")
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/getSchemas`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Failed to fetch content types")
+      }
+      const data = await response.json()
+      setContentTypes(data || [])
+      console.log("Content types fetched:", data)
+    } catch (error) {
+      console.error("Error fetching content types:", error)
+      // Redirect to login on error
+      // window.location.href = "/login"
+    }
+
+  }
+
+  useEffect(() => {
+    // Fetch content types when the component mounts
+    handleGetSchemas()
+  }
+  , []);
+
   const handleDelete = (id: string) => {
     setContentTypes((prev) => prev.filter((ct) => ct.id !== id))
   }
@@ -130,7 +158,7 @@ export default function ContentTypesPage() {
                         <span className="text-gray-500 ml-1">fields</span>
                       </div>
                       <div>
-                        <span className="font-medium">{contentType.entries}</span>
+                        <span className="font-medium">{contentType.recordCount}</span>
                         <span className="text-gray-500 ml-1">entries</span>
                       </div>
                     </div>
