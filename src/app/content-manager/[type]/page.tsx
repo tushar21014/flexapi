@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -27,51 +27,46 @@ interface ContentTypePageProps {
 }
 
 export default function ContentTypePage({ params }: ContentTypePageProps) {
+  const searchParams = useSearchParams()
+  const contentTypeDisplayName = searchParams.get("displayName") || "Content"
+
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<Employee | null>(null)
   const [fields, setFields] = useState<string[]>([])
   const [records, setRecords] = useState<any[]>([])
-  
+
   const fetchSchemaFields = async (schemaId: string) => {
     const token = localStorage.getItem("token")
     const res = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/getSchema/${schemaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-    console.log("Schema fields:", data.field)
-    setFields(Object.keys(JSON.parse(data.field)))
+    console.log
+    setFields(data)  // already a map like { empId: "string", name: "string", ... }
   }
 
-  
+
   const fetchRecords = async (schemaId: string) => {
     const token = localStorage.getItem("token")
     const res = await fetch(`${process.env.NEXT_PUBLIC_RECORD_URL}/getRecord/${schemaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+
     const data = await res.json()
+    console.log(data)
     setRecords(data)
   }
-  
-  // Mock data for employees
-  const employees: Employee[] = [
-    { id: "1", empId: "E001", name: "Tushar", salary: 50000 },
-    { id: "2", empId: "E002", name: "Shivam", salary: 45000 },
-    { id: "3", empId: "E003", name: "Rahul", salary: 55000 },
-    { id: "4", empId: "E004", name: "Priya", salary: 48000 },
-    { id: "5", empId: "E005", name: "Amit", salary: 52000 },
-    { id: "6", empId: "E006", name: "Neha", salary: 47000 },
-    { id: "7", empId: "E007", name: "Vikram", salary: 60000 },
-    { id: "8", empId: "E008", name: "Anjali", salary: 49000 },
-  ]
 
-  const filteredEmployees = employees.filter(
-    (emp) =>
-      emp.empId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.salary.toString().includes(searchTerm),
-  )
+  // Mock data for employees
+
+  // const filteredEmployees = employees.filter(
+  //   (emp) =>
+  //     emp.empId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     emp.salary.toString().includes(searchTerm),
+  // )
 
   const handleDeleteClick = (employee: Employee) => {
     setSelectedEntry(employee)
@@ -89,15 +84,13 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
     router.push(`/content-manager/${params.type}/${id}`)
   }
 
-  const contentTypeDisplayName = params.type.charAt(0).toUpperCase() + params.type.slice(1)
-
+  // const contentTypeDisplayName = params.type.charAt(0).toUpperCase() + params.type.slice(1)
 
   useEffect(() => {
-    // Fetch schema fields and records when the component mounts
     fetchSchemaFields(params.type)
     fetchRecords(params.type)
-  }, [params.type])
-  
+  }, [])
+
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
@@ -114,7 +107,7 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                 </Button>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{contentTypeDisplayName}</h2>
-                  <p className="text-gray-600">{filteredEmployees.length} entries found</p>
+                  {/* <p className="text-gray-600">{filteredEmployees.length} entries found</p> */}
                 </div>
               </div>
               <Button className="bg-[#4945ff] hover:bg-[#3730ff]">
@@ -164,24 +157,29 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Salary</TableHead>
+                    {Object.keys(fields).map((fieldName) => (
+                      <TableHead key={fieldName}>
+                        {fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
+                      </TableHead>
+                    ))}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell className="font-medium">{employee.empId}</TableCell>
-                      <TableCell>{employee.name}</TableCell>
-                      <TableCell>{employee.salary.toLocaleString()}</TableCell>
+                  {records.map((record, index) => (
+                    <TableRow key={record.id || index}>
+                      {Object.keys(fields).map((fieldName) => (
+                        <TableCell key={fieldName}>
+          {record[fieldName] !== undefined ? record[fieldName] : "N/A"}
+          </TableCell>
+                      ))}
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewEntry(employee.id)}
+                            onClick={() => handleViewEntry(record.id)}
                             className="text-blue-600 hover:text-blue-800"
                           >
                             <Eye className="w-4 h-4" />
@@ -189,7 +187,7 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteClick(employee)}
+                            onClick={() => handleDeleteClick(record)}
                             className="text-red-600 hover:text-red-800"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -201,11 +199,11 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                 </TableBody>
               </Table>
 
-              {filteredEmployees.length === 0 && (
+              {/* {filteredEmployees.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-gray-600">No entries found</p>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </main>

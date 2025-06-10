@@ -62,9 +62,10 @@ export default function ContentManagerPage() {
 
 
 
-  const handleContentTypeClick = (contentType: ContentType) => {
-    router.push(`/content-manager/${contentType.id}`)
-  }
+    const handleContentTypeClick = (contentType: ContentType) => {
+        router.push(`/content-manager/${contentType.id}?displayName=${encodeURIComponent(contentType.name)}`)
+      }
+      
 
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
