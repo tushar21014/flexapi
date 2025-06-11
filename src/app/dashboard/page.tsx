@@ -10,10 +10,11 @@ import { useEffect, useState } from "react"
 
 export default function DashboardPage() {
   const [user, setUser] = useState({"email": "", "name": ""});
-
+  const [schemaCount, setSchemaCount] = useState(0);
   useEffect(() => {
     // Fetch user data when the component mounts
     getUser()
+    handleSchemaCount()
   }, [])
 
   const getUser = async () => {
@@ -42,6 +43,28 @@ export default function DashboardPage() {
       window.location.href = "/login"
     }
   }
+
+  const handleSchemaCount = async () => {
+    const token = localStorage.getItem("token")
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/schemasCount`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Failed to fetch content types")
+      }
+      const data = await response.json()
+      setSchemaCount(data || 0)
+      console.log("Content types count:", data)
+      return data.length || 0
+    } catch (error) {
+      console.error("Error fetching content types:", error)
+      return 0
+    }
+  }
+
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
@@ -63,7 +86,7 @@ export default function DashboardPage() {
                   <Database className="h-4 w-4 text-[#4945ff]" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">5</div>
+                  <div className="text-2xl font-bold">{schemaCount}</div>
                   <p className="text-xs text-gray-600">Active schemas</p>
                   <Link href="/content-types">
                     <Button variant="outline" size="sm" className="mt-3">

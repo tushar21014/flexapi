@@ -7,13 +7,13 @@ import { Database, Users, Settings, Puzzle, ImageIcon, Home, FileText } from "lu
 // Update the navigation array to include Content Manager
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Content Manager", href: "/content-manager", icon: FileText },
-  { name: "Content Types", href: "/content-types", icon: Database },
+  { name: "Schema Manager", href: "/content-manager", icon: FileText },
+  { name: "Schema Types", href: "/content-types", icon: Database },
   { name: "Users", href: "/users", icon: Users },
 ]
 
 const plugins = [
-  { name: "Content Types Builder", href: "/content-types/builder", icon: Database },
+  { name: "Schema Builder", href: "/content-types/builder", icon: Database },
   { name: "Media Library", href: "/media", icon: ImageIcon },
 ]
 

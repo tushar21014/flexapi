@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, Plus, Search, Filter, Eye, Trash2, MoreHorizontal, Download, Upload } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConfirmationModal } from "@/components/confirmation-modal"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ApiDocumentation } from "@/components/api-doucmentation"
 
 interface Employee {
   id: string
@@ -29,13 +31,14 @@ interface ContentTypePageProps {
 export default function ContentTypePage({ params }: ContentTypePageProps) {
   const searchParams = useSearchParams()
   const contentTypeDisplayName = searchParams.get("displayName") || "Content"
-
+  const contentTypeId = params.type; 
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<Employee | null>(null)
   const [fields, setFields] = useState<string[]>([])
   const [records, setRecords] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("entries")
 
   const fetchSchemaFields = async (schemaId: string) => {
     const token = localStorage.getItem("token")
@@ -43,7 +46,6 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-    console.log
     setFields(data)  // already a map like { empId: "string", name: "string", ... }
   }
 
@@ -116,6 +118,15 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
               </Button>
             </div>
 
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+              <TabsList>
+                <TabsTrigger value="entries">Entries</TabsTrigger>
+                <TabsTrigger value="api">API</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {activeTab === "entries" ? (
+              <>
             {/* Filters and Search */}
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-6">
               <div className="relative flex-1">
@@ -151,6 +162,7 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                 </DropdownMenu>
               </div>
             </div>
+            
 
             {/* Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -171,8 +183,8 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                     <TableRow key={record.id || index}>
                       {Object.keys(fields).map((fieldName) => (
                         <TableCell key={fieldName}>
-          {record[fieldName] !== undefined ? record[fieldName] : "N/A"}
-          </TableCell>
+                          {record[fieldName] !== undefined ? record[fieldName] : "N/A"}
+                        </TableCell>
                       ))}
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
@@ -205,6 +217,10 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                 </div>
               )} */}
             </div>
+            </>
+            ) : (
+              <ApiDocumentation contentTypeId={contentTypeId} contentTypeName={contentTypeDisplayName} />
+            )}
           </div>
         </main>
       </div>

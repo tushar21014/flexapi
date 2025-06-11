@@ -100,6 +100,7 @@ export default function ContentTypeBuilderPage() {
       body: JSON.stringify(payload)
     })
   
+    console.log("Response status:", res)
     if (res.ok) {
       const result = await res.json()
       console.log("Schema created:", result)

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Edit, Trash2, Database } from "lucide-react"
 import Link from "next/link"
+import { ConfirmationModal } from "@/components/confirmation-modal"
 
 interface ContentType {
   id: string
@@ -19,6 +20,9 @@ interface ContentType {
 }
 
 export default function ContentTypesPage() {
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null)
+
   const [contentTypes, setContentTypes] = useState<ContentType[]>([
     {
       id: "1",
@@ -67,7 +71,7 @@ export default function ContentTypesPage() {
     },
   ])
 
-  const handleGetSchemas = async() => {
+  const handleGetSchemas = async () => {
     const token = localStorage.getItem("token")
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/getSchemas`, {
@@ -89,15 +93,47 @@ export default function ContentTypesPage() {
 
   }
 
+  const handleDelete = async () => {
+    if (!selectedDeleteId) return
+
+    const token = localStorage.getItem("token")
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SCHEMA_URL}/${selectedDeleteId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to delete content type")
+      }
+      // const data = await response.json()
+      // console.log("Content type deleted:", response)
+      console.log("Schema deleted:" )
+
+      // Remove from local state
+      setContentTypes((prev) => prev.filter((ct) => ct.id !== selectedDeleteId))
+
+    } catch (error) {
+      console.error("Error deleting content type:", error)
+    }
+
+    // Close modal
+    setIsDeleteModalOpen(false)
+    setSelectedDeleteId(null)
+  }
+
+
   useEffect(() => {
     // Fetch content types when the component mounts
     handleGetSchemas()
   }
-  , []);
+    , []);
 
-  const handleDelete = (id: string) => {
-    setContentTypes((prev) => prev.filter((ct) => ct.id !== id))
-  }
 
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
@@ -131,7 +167,7 @@ export default function ContentTypesPage() {
                           <Database className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <CardTitle className="text-lg">{contentType.displayName}</CardTitle>
+                          <CardTitle className="text-lg">{contentType.name}</CardTitle>
                           <p className="text-sm text-gray-500">{contentType.name}</p>
                         </div>
                       </div>
@@ -142,7 +178,10 @@ export default function ContentTypesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(contentType.id)}
+                          onClick={() => {
+                            setSelectedDeleteId(contentType.id)
+                            setIsDeleteModalOpen(true)
+                          }}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -189,6 +228,20 @@ export default function ContentTypesPage() {
           </div>
         </main>
       </div>
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setSelectedDeleteId(null)
+        }}
+        onConfirm={handleDelete}
+        title="Delete Schema"
+        description="Are you sure you want to delete this schema? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="delete"
+      />
+
     </div>
   )
 }
