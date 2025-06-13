@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { FieldTypeSelector } from "@/components/field-type-selector"
 import { Plus, Save, ArrowLeft, Trash2, Edit } from "lucide-react"
+import { Label } from "@/components/ui/label"
 
 interface Field {
   id: string
@@ -19,7 +20,7 @@ interface Field {
   type: string
   required: boolean
   unique: boolean
-  description?: string
+  primaryKey?: boolean  
 }
 
 export default function ContentTypeBuilderPage() {
@@ -32,14 +33,17 @@ export default function ContentTypeBuilderPage() {
   const [fields, setFields] = useState<Field[]>([])
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false)
   const [selectedFieldType, setSelectedFieldType] = useState<any>(null)
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false)
+  const [apiKey, setApiKey] = useState("")
   const [fieldForm, setFieldForm] = useState({
     name: "",
     displayName: "",
     required: false,
     unique: false,
-    description: "",
+    primaryKey: false,
   })
 
+  
   const handleAddField = () => {
     if (selectedFieldType && fieldForm.name) {
       const newField: Field = {
@@ -49,7 +53,7 @@ export default function ContentTypeBuilderPage() {
         type: selectedFieldType.type,
         required: fieldForm.required,
         unique: fieldForm.unique,
-        description: fieldForm.description,
+        primaryKey: fieldForm.primaryKey,
       }
       setFields((prev) => [...prev, newField])
       setIsFieldDialogOpen(false)
@@ -59,7 +63,7 @@ export default function ContentTypeBuilderPage() {
         displayName: "",
         required: false,
         unique: false,
-        description: "",
+        primaryKey: false,
       })
     }
   }
@@ -76,21 +80,26 @@ export default function ContentTypeBuilderPage() {
       alert("You must be logged in.")
       return
     }
-  
+
     // Build fields object from array of fields
-    const fieldsObj = fields.reduce((acc: { [key: string]: string }, field) => {
-      acc[field.name] = field.type
+    const fieldsObj = fields.reduce((acc: { [key: string]: any }, field) => {
+      acc[field.name] = {
+        type: field.type,
+        required: field.required,
+        unique: field.unique,
+        primaryKey: field.primaryKey || false
+      }
       return acc
     }, {})
-  
+
     const payload = {
       name: contentType.name,
       description: contentType.description,
       fields: fieldsObj
     }
-  
+
     console.log("Sending payload:", payload)
-  
+
     const res = await fetch(`${api}/createSchema`, {
       method: "POST",
       headers: {
@@ -99,18 +108,21 @@ export default function ContentTypeBuilderPage() {
       },
       body: JSON.stringify(payload)
     })
-  
+
     console.log("Response status:", res)
     if (res.ok) {
       const result = await res.json()
-      console.log("Schema created:", result)
-      router.push("/content-types")
+      console.log("Schema created successfully:", result["api"])
+      setApiKey(result["api"] || "");
+      setIsApiDialogOpen(true)
+
+      // router.push("/content-types")
     } else {
       const error = await res.json()
       alert("Failed to create schema: " + error.message)
     }
   }
-  
+
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
@@ -221,7 +233,7 @@ export default function ContentTypeBuilderPage() {
                             />
                           </div>
                         </div>
-                        <div>
+                        {/* <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                           <Textarea
                             value={fieldForm.description}
@@ -229,14 +241,32 @@ export default function ContentTypeBuilderPage() {
                             placeholder="Field description"
                             rows={2}
                           />
-                        </div>
+                        </div> */}
                         <div className="flex space-x-4">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={fieldForm.primaryKey}
+                              onChange={(e) =>
+                                setFieldForm((prev) => ({
+                                  ...prev,
+                                  primaryKey: e.target.checked,
+                                  // Optionally, you can also reset required and unique when primaryKey is checked:
+                                  required: e.target.checked ? false : prev.required,
+                                  unique: e.target.checked ? false : prev.unique,
+                                }))
+                              }
+                              className="mr-2"
+                            />
+                            Primary Key
+                          </label>
                           <label className="flex items-center">
                             <input
                               type="checkbox"
                               checked={fieldForm.required}
                               onChange={(e) => setFieldForm((prev) => ({ ...prev, required: e.target.checked }))}
                               className="mr-2"
+                              disabled={fieldForm.primaryKey}  // Disable if primaryKey is checked
                             />
                             Required field
                           </label>
@@ -246,9 +276,12 @@ export default function ContentTypeBuilderPage() {
                               checked={fieldForm.unique}
                               onChange={(e) => setFieldForm((prev) => ({ ...prev, unique: e.target.checked }))}
                               className="mr-2"
+                              disabled={fieldForm.primaryKey}  // Disable if primaryKey is checked
                             />
                             Unique field
                           </label>
+
+
                         </div>
                         <div className="flex justify-end space-x-2 pt-4">
                           <Button variant="outline" onClick={() => setSelectedFieldType(null)}>
@@ -310,6 +343,43 @@ export default function ContentTypeBuilderPage() {
           </div>
         </main>
       </div>
+      {isApiDialogOpen && (
+        <Dialog open={isApiDialogOpen} onOpenChange={(open) => {
+          setIsApiDialogOpen(open)
+          if (!open) {
+            router.push("/content-types")
+          }
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>API Key</DialogTitle>
+              <DialogDescription>
+                Anyone who has this key will be able to access schema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="grid flex-1 gap-2">
+                <Label htmlFor="link" className="sr-only">
+                  Link
+                </Label>
+                <Input
+                  id="link"
+                  defaultValue={apiKey}
+                  readOnly
+                />
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <DialogClose asChild>
+                <Button type="button" onClick={() => (router.push("/content-types"))} variant="secondary">
+                  Close
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
     </div>
   )
 }

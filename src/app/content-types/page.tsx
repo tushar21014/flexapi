@@ -139,19 +139,19 @@ export default function ContentTypesPage() {
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="Content Types" />
+        <Header title="Schema Types" />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-7xl mx-auto">
             {/* Header Actions */}
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Content Types</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Schema Types</h2>
                 <p className="text-gray-600">Manage your content structure and schemas</p>
               </div>
               <Link href="/content-types/builder">
                 <Button className="bg-[#4945ff] hover:bg-[#3730ff]">
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Content Type
+                  Create Schema Type
                 </Button>
               </Link>
             </div>
@@ -215,12 +215,12 @@ export default function ContentTypesPage() {
             {contentTypes.length === 0 && (
               <div className="text-center py-12">
                 <Database className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No content types yet</h3>
-                <p className="text-gray-600 mb-6">Get started by creating your first content type</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No schema types yet</h3>
+                <p className="text-gray-600 mb-6">Get started by creating your first schema type</p>
                 <Link href="/content-types/builder">
                   <Button className="bg-[#4945ff] hover:bg-[#3730ff]">
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Content Type
+                    Create Schema Type
                   </Button>
                 </Link>
               </div>

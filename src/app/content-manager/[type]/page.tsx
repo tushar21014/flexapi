@@ -1,17 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Plus, Search, Filter, Eye, Trash2, MoreHorizontal, Download, Upload } from "lucide-react"
+import { ArrowLeft, Plus, Search, Edit ,Filter, Eye, Trash2, MoreHorizontal, Download, Upload } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiDocumentation } from "@/components/api-doucmentation"
+import { EntryForm } from "@/components/entry-form"
+import { Badge } from "@/components/ui/badge"
 
 interface Employee {
   id: string
@@ -21,24 +23,39 @@ interface Employee {
 }
 
 
-
-interface ContentTypePageProps {
-  params: {
-    type: string
+interface Field {
+  name: string
+  displayName: string
+  type: string
+  required: boolean
+  unique: boolean
+  isPrimaryKey?: boolean
+  description?: string
+  constraints: {
+    notNull: boolean
+    unique: boolean
+    primaryKey: boolean
+    autoIncrement?: boolean
   }
 }
 
-export default function ContentTypePage({ params }: ContentTypePageProps) {
+
+
+export default function ContentTypePage() {
   const searchParams = useSearchParams()
+  const params = useParams();
   const contentTypeDisplayName = searchParams.get("displayName") || "Content"
-  const contentTypeId = params.type; 
+  const contentTypeId = params.type;
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<Employee | null>(null)
-  const [fields, setFields] = useState<string[]>([])
+  const [fields, setFields] = useState<Field[]>([])
   const [records, setRecords] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("entries")
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<{} | null>(null)
+  
 
   const fetchSchemaFields = async (schemaId: string) => {
     const token = localStorage.getItem("token")
@@ -46,7 +63,24 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-    setFields(data)  // already a map like { empId: "string", name: "string", ... }
+    const fieldsArray: Field[] = Object.entries(data).map(([key, value]: [string, any]) => ({
+      name: key,
+      displayName: key,
+      type: value.type || "String",
+      required: value.required || false,
+      unique: value.unique || false,
+      isPrimaryKey: value.primaryKey || false,
+      description: value.description || "",
+      constraints: {
+        notNull: value.required || false,
+        unique: value.unique || false,
+        primaryKey: value.primaryKey || false,
+        autoIncrement: value.autoIncrement || false,
+      },
+    }))
+
+    console.log("Fetched fields:", fieldsArray)
+    setFields(fieldsArray)  // already a map like { empId: "string", name: "string", ... }
   }
 
 
@@ -70,14 +104,76 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
   //     emp.salary.toString().includes(searchTerm),
   // )
 
-  const handleDeleteClick = (employee: Employee) => {
-    setSelectedEntry(employee)
-    setIsDeleteModalOpen(true)
+  const handleEditEntry = (record: any) => {
+    setEditingEntry(record)
+    setShowCreateForm(true)
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteClick = (record : any) => {
+    setSelectedEntry(record)
+    setIsDeleteModalOpen(true)
+  }
+  const createEntry = async (data: any) => {
+    const token = localStorage.getItem("token");
+    // console.log("Creating entry with data:", data);
+    console.log("Creating entry ");
+    const url = `${process.env.NEXT_PUBLIC_RECORD_URL}/createRecord?schemaId=${params.type}`;
+  
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  
+    const savedData = await res.json();
+    // console.log("Created entry:", savedData);
+  
+    setRecords((prevRecords) => [...prevRecords, savedData]);
+    setShowCreateForm(false);
+  };
+  
+  const updateEntry = async (id: string, data: any) => {
+    const token = localStorage.getItem("token");
+  
+    const url = `${process.env.NEXT_PUBLIC_RECORD_URL}/${id}`;
+  
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  
+    const savedData = await res.json();
+    console.log("Updated entry:", savedData);
+  
+    setRecords((prevRecords) =>
+      prevRecords.map((record) => (record.id === savedData.id ? savedData : record))
+    );
+    setShowCreateForm(false);
+    setEditingEntry(null);
+  };
+  
+
+  const handleDeleteConfirm = async() => {
+    
+    await fetch(`${process.env.NEXT_PUBLIC_RECORD_URL}/${selectedEntry?.id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+    
+    setRecords((prevRecords) => prevRecords.filter((record) => record.id !== selectedEntry?.id))
     // In a real app, you would delete the entry here
     console.log("Deleting entry:", selectedEntry)
+
     setIsDeleteModalOpen(false)
     setSelectedEntry(null)
   }
@@ -86,12 +182,53 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
     router.push(`/content-manager/${params.type}/${id}`)
   }
 
+  const handleCancelForm = () => {
+    setShowCreateForm(false)
+    // setEditingEntry(null)
+  }
+
+  const handleCreateEntry = () => {
+    // setEditingEntry(null)
+    setShowCreateForm(true)
+  }
   // const contentTypeDisplayName = params.type.charAt(0).toUpperCase() + params.type.slice(1)
 
   useEffect(() => {
-    fetchSchemaFields(params.type)
-    fetchRecords(params.type)
-  }, [])
+    if (contentTypeId) {
+      fetchSchemaFields(contentTypeId)
+      fetchRecords(contentTypeId)
+    }
+  }, [contentTypeId, showCreateForm])
+
+  if (showCreateForm) {
+    return (
+      <div className="flex h-screen bg-[#f6f6f9]">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* <Header title={editingEntry ? "Edit Entry" : "Create New Entry"} /> */}
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-6">
+                <Button variant="ghost" onClick={handleCancelForm}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to {contentTypeDisplayName}
+                </Button>
+              </div>
+              <EntryForm
+                fields={fields}
+                initialData={editingEntry}
+                onSave={editingEntry ? async () => {} : createEntry}
+                onEdit={editingEntry ? updateEntry : undefined}
+                onCancel={handleCancelForm}
+                isEditing={!!editingEntry}
+              />
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
 
   return (
     <div className="flex h-screen bg-[#f6f6f9]">
@@ -112,7 +249,7 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
                   {/* <p className="text-gray-600">{filteredEmployees.length} entries found</p> */}
                 </div>
               </div>
-              <Button className="bg-[#4945ff] hover:bg-[#3730ff]">
+              <Button className="bg-[#4945ff] hover:bg-[#3730ff]" onClick={handleCreateEntry}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create new entry
               </Button>
@@ -121,103 +258,164 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
               <TabsList>
                 <TabsTrigger value="entries">Entries</TabsTrigger>
+                <TabsTrigger value="schema">Schema</TabsTrigger>
                 <TabsTrigger value="api">API</TabsTrigger>
               </TabsList>
             </Tabs>
 
             {activeTab === "entries" ? (
               <>
-            {/* Filters and Search */}
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search entries..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" className="flex items-center">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filters
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <MoreHorizontal className="w-4 h-4" />
+                {/* Filters and Search */}
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Search entries..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" className="flex items-center">
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filters
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="flex items-center">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Import
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-            
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem className="flex items-center">
+                          <Download className="w-4 h-4 mr-2" />
+                          Export
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Import
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Object.keys(fields).map((fieldName) => (
-                      <TableHead key={fieldName}>
-                        {fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
 
-                <TableBody>
-                  {records.map((record, index) => (
-                    <TableRow key={record.id || index}>
-                      {Object.keys(fields).map((fieldName) => (
-                        <TableCell key={fieldName}>
-                          {record[fieldName] !== undefined ? record[fieldName] : "N/A"}
-                        </TableCell>
+                {/* Table */}
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {fields.map((field) => (
+                          <TableHead key={field.name}>
+                            {field.displayName.charAt(0).toUpperCase() + field.displayName.slice(1)}
+                          </TableHead>
+                        ))}
+
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      {records.map((record, index) => (
+                        <TableRow key={record.id || index}>
+                          {fields.map((fieldName) => (
+                            <TableCell key={fieldName.name}>
+                              {record[fieldName.name] !== undefined ? record[fieldName.name] : "N/A"}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewEntry(record.id)}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditEntry(record)}
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(record)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewEntry(record.id)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteClick(record)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    </TableBody>
+                  </Table>
 
-              {/* {filteredEmployees.length === 0 && (
+                  {/* {filteredEmployees.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-gray-600">No entries found</p>
                 </div>
               )} */}
-            </div>
-            </>
+                </div>
+              </>
+            ) : activeTab === "schema" ? (
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6">
+                  <h3 className="text-lg font-medium mb-4">Schema Definition</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-200">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-gray-200 px-4 py-2 text-left">Field Name</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Display Name</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Type</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Constraints</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fields.map((field, index) => (
+                          <tr key={index}>
+                            <td className="border border-gray-200 px-4 py-2 font-mono text-sm">{field.name}</td>
+                            <td className="border border-gray-200 px-4 py-2">{field.displayName}</td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              <Badge variant="outline">{field.type.toUpperCase()}</Badge>
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              <div className="flex flex-wrap gap-1">
+                                {field.constraints.primaryKey && (
+                                  <Badge className="bg-blue-500 text-white text-xs">PRIMARY KEY</Badge>
+                                )}
+                                {field.constraints.notNull && (
+                                  <Badge className="bg-red-500 text-white text-xs">NOT NULL</Badge>
+                                )}
+                                {field.constraints.unique && (
+                                  <Badge className="bg-purple-500 text-white text-xs">UNIQUE</Badge>
+                                )}
+                                {/* {field.constraints.maxLength && (
+                                  <Badge variant="outline" className="text-xs">
+                                    MAX: {field.constraints.maxLength}
+                                  </Badge>
+                                )} */}
+                              </div>
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">
+                              {field.description}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             ) : (
               <ApiDocumentation contentTypeId={contentTypeId} contentTypeName={contentTypeDisplayName} />
             )}
@@ -231,7 +429,7 @@ export default function ContentTypePage({ params }: ContentTypePageProps) {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
         title="Delete Entry"
-        description={`Are you sure you want to delete ${selectedEntry?.name} (${selectedEntry?.empId})? This action cannot be undone.`}
+        description={`Are you sure you want to delete  ${selectedEntry?.id}? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         variant="delete"
