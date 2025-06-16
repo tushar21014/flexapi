@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function LoginPage() {
   const api = process.env.NEXT_PUBLIC_USER_URL;
@@ -25,8 +26,14 @@ export default function LoginPage() {
       },
       body: JSON.stringify({ email, password }),
     })
-    const data = await res.json();
 
+    const data = await res.json();
+    if (!res.ok) {
+      // Handle error (e.g., show notification)
+      toast.error(data.message || "Login failed. Please try again.");
+      console.error("Login failed:", data.message);
+      return;
+    }
     // if (!res.ok) {
     //   // Handle error (e.g., show notification)
     //   console.error("Login failed:", data.message)
@@ -39,6 +46,8 @@ export default function LoginPage() {
   }
 
   return (
+    <>
+    <Toaster/>
     <div className="min-h-screen bg-[#f6f6f9] flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
@@ -93,5 +102,6 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
@@ -20,7 +20,16 @@ interface Field {
   type: string
   required: boolean
   unique: boolean
-  primaryKey?: boolean  
+  primaryKey?: boolean 
+  relatedContentType?: string
+  description?: string
+}
+
+interface ContentType {
+  id: string
+  name: string
+  displayName: string
+  description?: string
 }
 
 export default function ContentTypeBuilderPage() {
@@ -32,47 +41,52 @@ export default function ContentTypeBuilderPage() {
   })
   const [fields, setFields] = useState<Field[]>([])
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false)
-  const [selectedFieldType, setSelectedFieldType] = useState<any>(null)
-  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false)
   const [apiKey, setApiKey] = useState("")
-  const [fieldForm, setFieldForm] = useState({
-    name: "",
-    displayName: "",
-    required: false,
-    unique: false,
-    primaryKey: false,
-  })
+  const [isApiDialogOpen, setIsApiDialogOpen] = useState(false)
+  const [existingContentTypes, setExistingContentTypes] = useState<ContentType[]>()
+  const api = process.env.NEXT_PUBLIC_SCHEMA_URL
 
+
+  useEffect(() => {
+    // Fetch existing content types when the component mounts
+    handleGetSchemas()
+  }, [])
   
-  const handleAddField = () => {
-    if (selectedFieldType && fieldForm.name) {
-      const newField: Field = {
-        id: Date.now().toString(),
-        name: fieldForm.name,
-        displayName: fieldForm.displayName || fieldForm.name,
-        type: selectedFieldType.type,
-        required: fieldForm.required,
-        unique: fieldForm.unique,
-        primaryKey: fieldForm.primaryKey,
-      }
-      setFields((prev) => [...prev, newField])
-      setIsFieldDialogOpen(false)
-      setSelectedFieldType(null)
-      setFieldForm({
-        name: "",
-        displayName: "",
-        required: false,
-        unique: false,
-        primaryKey: false,
+
+  const handleGetSchemas = async () => {
+    const token = localStorage.getItem("token")
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/getSchemas`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
+      if (!response.ok) {
+        throw new Error("Failed to fetch content types")
+      }
+      const data = await response.json()
+      setExistingContentTypes(data || [])
+      console.log("Content types fetched:", data)
+    } catch (error) {
+      console.error("Error fetching content types:", error)
+      // Redirect to login on error
+      // window.location.href = "/login"
     }
+
+  }
+
+  const handleAddField = (fieldData: any) => {
+    const newField: Field = {
+      id: Date.now().toString(),
+      ...fieldData,
+    }
+    setFields((prev) => [...prev, newField])
+    setIsFieldDialogOpen(false)
   }
 
   const handleDeleteField = (id: string) => {
     setFields((prev) => prev.filter((field) => field.id !== id))
   }
-
-  const api = process.env.NEXT_PUBLIC_SCHEMA_URL
 
   const handleSave = async () => {
     const token = localStorage.getItem("token")
@@ -87,7 +101,8 @@ export default function ContentTypeBuilderPage() {
         type: field.type,
         required: field.required,
         unique: field.unique,
-        primaryKey: field.primaryKey || false
+        primaryKey: field.primaryKey || false,
+        relationSchema: field.relatedContentType
       }
       return acc
     }, {})
@@ -121,6 +136,11 @@ export default function ContentTypeBuilderPage() {
       const error = await res.json()
       alert("Failed to create schema: " + error.message)
     }
+  }
+
+  const getRelatedContentTypeName = (id: string) => {
+    const contentType = existingContentTypes.find((ct) => ct.id === id)
+    return contentType ? contentType.displayName : id
   }
 
   return (
@@ -203,96 +223,11 @@ export default function ContentTypeBuilderPage() {
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>
-                        {selectedFieldType ? `Configure ${selectedFieldType.name} Field` : "Select a field type"}
-                      </DialogTitle>
+                      <DialogTitle>Select a field type</DialogTitle>
                     </DialogHeader>
-
-                    {!selectedFieldType ? (
-                      <div className="py-4">
-                        <h3 className="text-lg font-medium mb-4">Select a field for your collection type</h3>
-                        <FieldTypeSelector onSelectField={setSelectedFieldType} />
-                      </div>
-                    ) : (
-                      <div className="py-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                            <Input
-                              value={fieldForm.name}
-                              onChange={(e) => setFieldForm((prev) => ({ ...prev, name: e.target.value }))}
-                              placeholder="Field name"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
-                            <Input
-                              value={fieldForm.displayName}
-                              onChange={(e) => setFieldForm((prev) => ({ ...prev, displayName: e.target.value }))}
-                              placeholder="Display name"
-                            />
-                          </div>
-                        </div>
-                        {/* <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                          <Textarea
-                            value={fieldForm.description}
-                            onChange={(e) => setFieldForm((prev) => ({ ...prev, description: e.target.value }))}
-                            placeholder="Field description"
-                            rows={2}
-                          />
-                        </div> */}
-                        <div className="flex space-x-4">
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={fieldForm.primaryKey}
-                              onChange={(e) =>
-                                setFieldForm((prev) => ({
-                                  ...prev,
-                                  primaryKey: e.target.checked,
-                                  // Optionally, you can also reset required and unique when primaryKey is checked:
-                                  required: e.target.checked ? false : prev.required,
-                                  unique: e.target.checked ? false : prev.unique,
-                                }))
-                              }
-                              className="mr-2"
-                            />
-                            Primary Key
-                          </label>
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={fieldForm.required}
-                              onChange={(e) => setFieldForm((prev) => ({ ...prev, required: e.target.checked }))}
-                              className="mr-2"
-                              disabled={fieldForm.primaryKey}  // Disable if primaryKey is checked
-                            />
-                            Required field
-                          </label>
-                          <label className="flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={fieldForm.unique}
-                              onChange={(e) => setFieldForm((prev) => ({ ...prev, unique: e.target.checked }))}
-                              className="mr-2"
-                              disabled={fieldForm.primaryKey}  // Disable if primaryKey is checked
-                            />
-                            Unique field
-                          </label>
-
-
-                        </div>
-                        <div className="flex justify-end space-x-2 pt-4">
-                          <Button variant="outline" onClick={() => setSelectedFieldType(null)}>
-                            Back
-                          </Button>
-                          <Button onClick={handleAddField} className="bg-[#4945ff] hover:bg-[#3730ff]">
-                            Add Field
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <div className="py-4">
+                      <FieldTypeSelector onSelectField={handleAddField} contentTypes={existingContentTypes} />
+                    </div>
                   </DialogContent>
                 </Dialog>
               </CardHeader>
@@ -309,13 +244,18 @@ export default function ContentTypeBuilderPage() {
                         className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
                       >
                         <div className="flex items-center space-x-4">
-                          <div className="w-8 h-8 bg-[#4945ff] rounded flex items-center justify-center">
+                          <div
+                            className={`w-8 h-8 ${field.color || "bg-[#4945ff]"} rounded flex items-center justify-center`}
+                          >
                             <span className="text-white text-xs font-bold">{field.type.charAt(0).toUpperCase()}</span>
                           </div>
                           <div>
                             <h4 className="font-medium">{field.displayName}</h4>
                             <p className="text-sm text-gray-500">
                               {field.name} • {field.type}
+                              {field.type === "relation" && field.relatedContentType && (
+                                <span> → {getRelatedContentTypeName(field.relatedContentType)}</span>
+                              )}
                               {field.required && " • Required"}
                               {field.unique && " • Unique"}
                             </p>
@@ -379,7 +319,6 @@ export default function ContentTypeBuilderPage() {
           </DialogContent>
         </Dialog>
       )}
-
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -10,17 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Save, Trash2 } from "lucide-react"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 
-interface EntryDetailPageProps {
-  params: {
-    type: string
-    id: string
-  }
-}
 
-export default function EntryDetailPage({ params }: EntryDetailPageProps) {
+export default function EntryDetailPage() {
   const router = useRouter()
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-
+  const params = useParams();
   // Mock data for the employee
   const [entry, setEntry] = useState({
     id: params.id,

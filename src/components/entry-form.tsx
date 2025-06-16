@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { CalendarIcon, Save, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import toast, { Toaster } from 'react-hot-toast';
 
 
 interface Field {
@@ -22,7 +23,9 @@ interface Field {
   isPrimaryKey?: boolean
   maxLength?: number
   defaultValue?: any
-  description?: string
+  description?: string,
+  relationSchema? : string
+
   constraints: {
     notNull: boolean
     unique: boolean
@@ -42,16 +45,25 @@ interface EntryFormProps {
   onEdit?: (id: string, data: any) => Promise<void>;
   onCancel: () => void
   isEditing?: boolean
+  relationTableId?: string
 }
 
-export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEditing = false }: EntryFormProps) {
+export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEditing = false, relationTableId }: EntryFormProps) {
   const [formData, setFormData] = useState<any>({})
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [relationalKeys, setRelationalKeys] = useState([])
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
+
+    if( relationTableId != "") {
+      if (relationTableId) {
+        getRelationIds(relationTableId).then((keys) => setRelationalKeys(keys));
+      }
+    }
     if (initialData) {
+      
       setFormData(initialData)
     } else {
       // Initialize with default values
@@ -65,9 +77,24 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
           defaultData[field.name] = getDefaultValueForType(field.type)
         }
       })
+
       setFormData(defaultData)
     }
   }, [initialData, fields])
+  
+
+  const getRelationIds = async (id: String) => {
+    const data = await fetch(`${process.env.NEXT_PUBLIC_SCHEMA_URL}/getPrimaryKeysData/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+  
+    const result = await data.json()
+    console.log("Relation IDs:", result)
+    return result 
+  }
   
 
   const getDefaultValueForType = (type: string) => {
@@ -99,7 +126,7 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
         if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           return "Please enter a valid email address"
         }
-        break
+        break        
       case "number":
       case "integer":
         if (value && isNaN(Number(value))) {
@@ -141,6 +168,7 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
       }))
     }
   }
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +180,7 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
       const error = validateField(field, formData[field.name]);
       if (error) {
         newErrors[field.name] = error;
+        toast.error(error);
       }
     });
   
@@ -251,6 +280,27 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
           </div>
         )
 
+      case "relation":
+        return (
+          <Select value={value || ""} onValueChange={(val: String) => handleFieldChange(field.name, val)}>
+            <SelectTrigger className={hasError ? "border-red-500" : ""}>
+              <SelectValue placeholder={`Select ${field.displayName.toLowerCase()}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {relationalKeys.map((key: string) => {
+                return (
+                  <SelectItem key={key} value={key}>
+                    {key}
+                  </SelectItem>
+                )
+              })}
+              {/* <SelectItem value="option1">Option 1</SelectItem>
+              <SelectItem value="option2">Option 2</SelectItem>
+              <SelectItem value="option3">Option 3</SelectItem> */}
+            </SelectContent>
+          </Select>
+        )
+
       case "enumeration":
         return (
           <Select value={value || ""} onValueChange={(val: String) => handleFieldChange(field.name, val)}>
@@ -308,6 +358,8 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
   }
 
   return (
+    <>
+    <Toaster />
     <Card>
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Entry" : "Create New Entry"}</CardTitle>
@@ -360,5 +412,6 @@ export function EntryForm({ fields, initialData, onSave, onEdit, onCancel, isEdi
         </form>
       </CardContent>
     </Card>
+    </>
   )
 }

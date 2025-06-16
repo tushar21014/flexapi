@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ export default function SignupPage() {
     const data = await res.json()
     if (!res.ok) {
       // Handle error (e.g., show notification)
+      toast.error(data.message || "Signup failed. Please try again.")
       console.error("Signup failed:", data.message)
       return
     }
@@ -54,6 +56,8 @@ export default function SignupPage() {
   }
 
   return (
+    <>
+    <Toaster />
     <div className="min-h-screen bg-[#f6f6f9] flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
@@ -154,5 +158,6 @@ export default function SignupPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }

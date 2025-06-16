@@ -7,13 +7,14 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Plus, Search, Edit ,Filter, Eye, Trash2, MoreHorizontal, Download, Upload } from "lucide-react"
+import { ArrowLeft, Plus, Search, Edit, Filter, Eye, Trash2, MoreHorizontal, Download, Upload } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ApiDocumentation } from "@/components/api-doucmentation"
 import { EntryForm } from "@/components/entry-form"
 import { Badge } from "@/components/ui/badge"
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Employee {
   id: string
@@ -30,7 +31,9 @@ interface Field {
   required: boolean
   unique: boolean
   isPrimaryKey?: boolean
-  description?: string
+  description?: string,
+  relationSchema? : string
+
   constraints: {
     notNull: boolean
     unique: boolean
@@ -55,7 +58,7 @@ export default function ContentTypePage() {
   const [activeTab, setActiveTab] = useState("entries")
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingEntry, setEditingEntry] = useState<{} | null>(null)
-  
+  const [relationTableId, setRelationTableId] = useState("");
 
   const fetchSchemaFields = async (schemaId: string) => {
     const token = localStorage.getItem("token")
@@ -63,6 +66,7 @@ export default function ContentTypePage() {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
+    // console.log("Fetched schema fields:", data)
     const fieldsArray: Field[] = Object.entries(data).map(([key, value]: [string, any]) => ({
       name: key,
       displayName: key,
@@ -71,6 +75,7 @@ export default function ContentTypePage() {
       unique: value.unique || false,
       isPrimaryKey: value.primaryKey || false,
       description: value.description || "",
+      relationSchema: value.relationSchema || null,
       constraints: {
         notNull: value.required || false,
         unique: value.unique || false,
@@ -109,37 +114,59 @@ export default function ContentTypePage() {
     setShowCreateForm(true)
   }
 
-  const handleDeleteClick = (record : any) => {
+  const handleDeleteClick = (record: any) => {
     setSelectedEntry(record)
     setIsDeleteModalOpen(true)
   }
+
+  const searchRelationSchema = (field: Field[]) => {
+    const relationField = field.find(f => f.type === "relation")
+    if (relationField) {
+      console.log("Relation field found:", relationField)
+      return relationField.relationSchema || ""
+    }
+    return ""
+  }
+
   const createEntry = async (data: any) => {
     const token = localStorage.getItem("token");
-    // console.log("Creating entry with data:", data);
-    console.log("Creating entry ");
     const url = `${process.env.NEXT_PUBLIC_RECORD_URL}/createRecord?schemaId=${params.type}`;
   
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
   
-    const savedData = await res.json();
-    // console.log("Created entry:", savedData);
+      const result = await res.json();
   
-    setRecords((prevRecords) => [...prevRecords, savedData]);
-    setShowCreateForm(false);
+      if (!res.ok) {
+        // Error message from backend (if structured as { error: "some message" })
+        const errorMessage = result.error || "Failed to create entry.";
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+  
+      // Success case
+      setRecords((prevRecords) => [...prevRecords, result]);
+      setShowCreateForm(false);
+  
+    } catch (error: any) {
+      console.error("Error creating entry:", error);
+      toast.error(error.message || "Something went wrong while creating entry.");
+    }
   };
   
+
   const updateEntry = async (id: string, data: any) => {
     const token = localStorage.getItem("token");
-  
+
     const url = `${process.env.NEXT_PUBLIC_RECORD_URL}/${id}`;
-  
+
     const res = await fetch(url, {
       method: "PUT",
       headers: {
@@ -148,28 +175,37 @@ export default function ContentTypePage() {
       },
       body: JSON.stringify(data),
     });
-  
+
     const savedData = await res.json();
     console.log("Updated entry:", savedData);
-  
+
     setRecords((prevRecords) =>
       prevRecords.map((record) => (record.id === savedData.id ? savedData : record))
     );
     setShowCreateForm(false);
     setEditingEntry(null);
   };
-  
 
-  const handleDeleteConfirm = async() => {
-    
-    await fetch(`${process.env.NEXT_PUBLIC_RECORD_URL}/${selectedEntry?.id}`, {
+
+  const handleDeleteConfirm = async () => {
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_RECORD_URL}/${selectedEntry?.id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     })
+
     
+    if(!res.ok) {
+      const errorData = await res.json();
+      toast.error(errorData.error || "Failed to delete entry.");
+      setIsDeleteModalOpen(false)
+      setSelectedEntry(null)
+      return;
+    }
+
     setRecords((prevRecords) => prevRecords.filter((record) => record.id !== selectedEntry?.id))
     // In a real app, you would delete the entry here
     console.log("Deleting entry:", selectedEntry)
@@ -197,11 +233,14 @@ export default function ContentTypePage() {
     if (contentTypeId) {
       fetchSchemaFields(contentTypeId)
       fetchRecords(contentTypeId)
+      setRelationTableId(searchRelationSchema(fields));
     }
   }, [contentTypeId, showCreateForm])
 
   if (showCreateForm) {
     return (
+      <>
+      <Toaster/>
       <div className="flex h-screen bg-[#f6f6f9]">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -217,20 +256,24 @@ export default function ContentTypePage() {
               <EntryForm
                 fields={fields}
                 initialData={editingEntry}
-                onSave={editingEntry ? async () => {} : createEntry}
+                onSave={editingEntry ? async () => { } : createEntry}
                 onEdit={editingEntry ? updateEntry : undefined}
                 onCancel={handleCancelForm}
                 isEditing={!!editingEntry}
+                relationTableId={relationTableId}
               />
             </div>
           </main>
         </div>
       </div>
+      </>
     )
   }
 
 
   return (
+    <>
+    <Toaster/>
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -435,5 +478,6 @@ export default function ContentTypePage() {
         variant="delete"
       />
     </div>
+    </>
   )
 }
