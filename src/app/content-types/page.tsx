@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Database } from "lucide-react"
 import Link from "next/link"
 import { ConfirmationModal } from "@/components/confirmation-modal"
 import { SkeletonLoader } from "@/components/skeleton-loader"
+import toast, { Toaster } from "react-hot-toast"
 
 interface ContentType {
   id: string
@@ -63,16 +64,19 @@ export default function ContentTypesPage() {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
+            }
           }
-        }
       )
 
       if (!response.ok) {
-        throw new Error("Failed to delete content type")
+        const err = await response.json();
+        toast.error("Cannot Delete : " + err.error)
+        throw new Error("Failed to delete schema type")
       }
       // const data = await response.json()
       // console.log("Content type deleted:", response)
       console.log("Schema deleted:")
+      toast.success("Schema deleted successfully")
 
       // Remove from local state
       setContentTypes((prev) => prev.filter((ct) => ct.id !== selectedDeleteId))
@@ -95,6 +99,8 @@ export default function ContentTypesPage() {
 
 
   return (
+    <>
+    <Toaster/>
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -213,5 +219,6 @@ export default function ContentTypesPage() {
       />
 
     </div>
+    </>
   )
 }

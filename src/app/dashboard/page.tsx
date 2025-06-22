@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Database, Users, FileText } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import toast,{ Toaster } from "react-hot-toast"
 
 export default function DashboardPage() {
   const [user, setUser] = useState({"email": "", "name": ""});
@@ -21,6 +22,7 @@ export default function DashboardPage() {
     const token = localStorage.getItem("token")
     if (!token) {
       // Redirect to login if no token is found
+      toast.error("You need to log in first")
       window.location.href = "/login"
       return
     }
@@ -66,6 +68,8 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
+    <Toaster/>
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -162,5 +166,6 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </>
   )
 }

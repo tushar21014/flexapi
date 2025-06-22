@@ -186,6 +186,7 @@ export function FieldTypeSelector({ onSelectField, contentTypes }: FieldTypeSele
       unique: isUnique,
       icon: selectedType.icon,
       color: selectedType.color,
+      selectedRelation: selectedRelation,
     }
 
     // Add relation-specific data

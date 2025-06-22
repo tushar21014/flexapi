@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Database, Users, Settings, Puzzle, ImageIcon, Home, FileText } from "lucide-react"
+import { Database, Users, Settings, Puzzle, ImageIcon, Home, FileText, Sparkles, Brain } from "lucide-react"
 
 // Update the navigation array to include Content Manager
 const navigation = [
@@ -10,6 +10,12 @@ const navigation = [
   { name: "Schema Manager", href: "/content-manager", icon: FileText },
   { name: "Schema Types", href: "/content-types", icon: Database },
   { name: "Users", href: "/users", icon: Users },
+]
+
+// New AI section
+const aiTools = [
+  { name: "AI Schema Generator", href: "/ai/schema-generator", icon: Brain },
+  { name: "AI Content Assistant", href: "/ai/content-assistant", icon: Sparkles },
 ]
 
 const plugins = [
@@ -56,6 +62,35 @@ export function Sidebar() {
                 >
                   <Icon className="w-4 h-4 mr-3" />
                   {item.name}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div className="p-4">
+          <h3 className="text-xs uppercase tracking-wider text-gray-400 mb-3">AI Tools</h3>
+          <nav className="space-y-1">
+            {aiTools.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors group ${
+                    isActive
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                      : "text-gray-300 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-pink-600/20 hover:text-white"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 mr-3 ${!isActive && "group-hover:text-purple-400"}`} />
+                  {item.name}
+                  {!isActive && (
+                    <div className="ml-auto">
+                      <Sparkles className="w-3 h-3 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  )}
                 </Link>
               )
             })}

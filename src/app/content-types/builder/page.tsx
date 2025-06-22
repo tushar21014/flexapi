@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { FieldTypeSelector } from "@/components/field-type-selector"
 import { Plus, Save, ArrowLeft, Trash2, Edit } from "lucide-react"
 import { Label } from "@/components/ui/label"
+import toast, { Toaster } from "react-hot-toast"
 
 interface Field {
   id: string
@@ -21,7 +22,8 @@ interface Field {
   required: boolean
   unique: boolean
   primaryKey?: boolean 
-  relatedContentType?: string
+  relatedContentType?: string,
+  selectedRelation?: string, // "oneToOne", "oneToMany", "manyToMany"
   description?: string
 }
 
@@ -76,6 +78,7 @@ export default function ContentTypeBuilderPage() {
   }
 
   const handleAddField = (fieldData: any) => {
+    console.log("Adding field:", fieldData)
     const newField: Field = {
       id: Date.now().toString(),
       ...fieldData,
@@ -102,7 +105,8 @@ export default function ContentTypeBuilderPage() {
         required: field.required,
         unique: field.unique,
         primaryKey: field.primaryKey || false,
-        relationSchema: field.relatedContentType
+        relationSchema: field.relatedContentType,
+        relationType: field.selectedRelation, // Default to oneToOne if not specified
       }
       return acc
     }, {})
@@ -134,7 +138,8 @@ export default function ContentTypeBuilderPage() {
       // router.push("/content-types")
     } else {
       const error = await res.json()
-      alert("Failed to create schema: " + error.message)
+      toast.error(error.error)
+      // alert("Failed to create schema: " + error.error)
     }
   }
 
@@ -144,6 +149,8 @@ export default function ContentTypeBuilderPage() {
   }
 
   return (
+    <>
+    <Toaster/>
     <div className="flex h-screen bg-[#f6f6f9]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -187,6 +194,7 @@ export default function ContentTypeBuilderPage() {
                         }))
                       }
                       placeholder="e.g., Product"
+                      required={true}
                     />
                   </div>
                   <div>
@@ -262,9 +270,9 @@ export default function ContentTypeBuilderPage() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
+                          {/* <Button variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
-                          </Button>
+                          </Button> */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -320,5 +328,7 @@ export default function ContentTypeBuilderPage() {
         </Dialog>
       )}
     </div>
+    </>
+
   )
 }
