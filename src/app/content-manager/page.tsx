@@ -103,28 +103,47 @@ export default function ContentManagerPage() {
 
               {/* Content Types Grid */}
               {!loading ? (
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredContentTypes.map((contentType) => {
-                    const Icon = contentType.icon || Database
-                    return (
-                      <Card
-                        key={contentType.id}
-                        className="hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => handleContentTypeClick(contentType)}
-                      >
-                        <CardContent className="p-6">
-                          <div className="flex items-start space-x-4">
-                            <div className="w-12 h-12 bg-[#4945ff] rounded-lg flex items-center justify-center">
-                              <Icon className="w-6 h-6 text-white" />
-                            </div>
+                filteredContentTypes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24">
+                    <svg width="64" height="64" fill="none" viewBox="0 0 64 64">
+                      <rect width="64" height="64" rx="16" fill="#f3f4f6"/>
+                      <path d="M20 44V24a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v20" stroke="#4945ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <rect x="24" y="28" width="16" height="8" rx="2" fill="#4945ff" opacity="0.2"/>
+                      <rect x="28" y="36" width="8" height="8" rx="2" fill="#4945ff" opacity="0.2"/>
+                    </svg>
+                    <h3 className="mt-6 text-xl font-semibold text-gray-800">No Content or Schemas to Manage</h3>
+                    <p className="mt-2 text-gray-500 text-center max-w-md">
+                      You have not created any schemas yet. Start by creating your first schema to manage your content efficiently.
+                    </p>
+                    <button
+                      className="mt-6 px-6 py-2 bg-[#4945ff] text-white rounded-lg shadow hover:bg-[#3730ff] transition"
+                      onClick={() => router.push('/content-types/builder')}
+                    >
+                      Create Schema
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredContentTypes.map((contentType) => {
+                      const Icon = contentType.icon || Database
+                      return (
+                        <Card
+                          key={contentType.id}
+                          className="hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => handleContentTypeClick(contentType)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-12 h-12 bg-[#4945ff] rounded-lg flex items-center justify-center">
+                                <Icon className="w-6 h-6 text-white" />
+                              </div>
                             <div className="flex-1">
                               <h3 className="font-medium text-lg text-gray-900">{contentType.name}</h3>
                               <p className="text-sm text-gray-500 mb-2">{contentType.description}</p>
-                              <div className="flex items-center text-sm text-gray-600">
-                                <span className="font-medium">{contentType.recordCount}</span>
+                              {/* <div className="flex items-center text-sm text-gray-600">
+                                <span className="font-medium">{contentType.count}</span>
                                 <span className="ml-1">entries</span>
-                              </div>
+                              </div> */}
                             </div>
                           </div>
                         </CardContent>
@@ -132,6 +151,7 @@ export default function ContentManagerPage() {
                     )
                   })}
                 </div>
+              )
               ) : (
                 <Card>
                   <CardContent>

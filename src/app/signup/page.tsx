@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import toast, { Toaster } from 'react-hot-toast';
+import { EyeClosedIcon, EyeIcon } from "lucide-react"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,8 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   })
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const router = useRouter()
 
   const handleSignup = async(e: React.FormEvent) => {
@@ -119,29 +122,81 @@ export default function SignupPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter your password"
-                required
-              />
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  required
+                  style={{ paddingRight: "2.5rem" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  style={{
+                    position: "absolute",
+                    right: "0.5rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center"
+                  }}
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeIcon className="w-5 h-5 text-gray-500" aria-hidden="true" />
+                  ) : (
+                    <EyeClosedIcon className="w-5 h-5 text-gray-500" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm Password
               </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm your password"
-                required
-              />
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirm your password"
+                  required
+                  style={{ paddingRight: "2.5rem" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  style={{
+                    position: "absolute",
+                    right: "0.5rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center"
+                  }}
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeIcon className="w-5 h-5 text-gray-500" aria-hidden="true" />
+                  ) : (
+                    <EyeClosedIcon className="w-5 h-5 text-gray-500" aria-hidden="true" />
+                  )}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full bg-[#4945ff] hover:bg-[#3730ff]">
               Create Account

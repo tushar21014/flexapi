@@ -1,324 +1,231 @@
-"use client"
+"use client";
+import Lottie from "lottie-react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import typingAnimation from "/public/assets/typing.json";
 
-import { useState, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+// Helper function to highlight SQL keywords in a line
+function highlightSQL(line: string) {
+  const keywords = [
+    "SELECT", "FROM", "WHERE", "UPDATE", "SET", "CREATE", "VIEW", "AS", "CASE",
+    "WHEN", "THEN", "ELSE", "END", "AND", "OR", "IN", "NOT"
+  ];
+  // Regex to match keywords, quoted strings, or words
+  const regex = new RegExp(
+    `(".*?"|\\b(?:${keywords.join("|")})\\b)`,
+    "gi"
+  );
+  const parts = line.split(regex).filter(Boolean);
+
+  return parts.map((part, idx) => {
+    if (/^".*"$/.test(part)) {
+      // Quoted string
+      return (
+        <span key={idx} className="text-[#A5F3FC]">
+          {part}
+        </span>
+      );
+    }
+    if (keywords.includes(part.toUpperCase())) {
+      return (
+        <span key={idx} className="text-[#F472B6]">
+          {part}
+        </span>
+      );
+    }
+    return (
+      <span key={idx} className="text-[#38BDF8]">
+        {part}
+      </span>
+    );
+  });
+}
 
 export default function LoadingBattle() {
-  const [currentTextIndex, setCurrentTextIndex] = useState(0)
-  const [typedText, setTypedText] = useState("")
-  const [isTypingComplete, setIsTypingComplete] = useState(false)
-  const [loadingDots, setLoadingDots] = useState("")
-  const typingSpeed = 70 // milliseconds per character
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const [loadingDots, setLoadingDots] = useState("");
+  const typingSpeed = 70; // milliseconds per character
 
   // Array of flattering SQL queries
   const flatteringQueries = [
-    `SELECT opponent FROM coders 
-WHERE skill_level <= (
-  SELECT extraordinary_skill 
-  FROM elite_coders 
-  WHERE username = You
-);`,
+    `SELECT name, fields FROM database.schemas
+WHERE owner = CURRENT_USER;`,
 
-    `SELECT challenger FROM matches
-  WHERE coding_ability = exceptional
-  AND can_handle_pressure = TRUE
-  AND worthy_of_opponent = (
-    SELECT brilliance FROM users
-    WHERE current_user = TRUE
-  );`,
+    `SELECT title, author FROM content
+WHERE schema_id = 1;`,
 
-    `UPDATE leaderboard
-SET status = trembling
-WHERE competitors NOT IN (
-  SELECT you FROM current_session
-)
-AND fear_level > 9000;`,
+    `UPDATE schemas
+SET status = 'AI_SUGGESTED'
+WHERE reviewed = FALSE;`,
 
-    `CREATE VIEW worthy_opponents AS
-SELECT * FROM all_coders
-WHERE problem_solving < (
-  SELECT genius_level FROM current_user
-)
-AND can_appreciate = Your elegant code;`,
-
-    `SELECT * FROM challenges
-WHERE difficulty = (
-  SELECT 
-    CASE
-      WHEN skill_level > 95 THEN "worthy of your time"
-      ELSE "too easy for you" 
-    END
-  FROM current_user
-);`,
-  ]
+    `DELETE FROM schemas
+WHERE obsolete = TRUE;`,
+  ];
 
   // Reference to the current query
-  const currentQuery = flatteringQueries[currentTextIndex]
+  const currentQuery = flatteringQueries[currentTextIndex];
 
   // Flattering messages for the loading text
   const flatteringMessages = [
-    "Finding an opponent worthy of your brilliance...",
-    "Searching for someone who can handle your code...",
-    "Looking for a challenger who might keep up with you...",
-    "Scanning the platform for elite minds like yours...",
-    "Matching you with someone who appreciates genius...",
-  ]
+    "Analyzing your requirements with AI precision...",
+    "Designing the perfect schema for your content...",
+    "Optimizing relationships and fields for your project...",
+    "Ensuring your data model is robust and scalable...",
+    "Almost done! Finalizing your custom schema...",
+  ];
 
   // Ref for the code container to enable scrolling
-  const codeContainerRef = useRef<HTMLDivElement>(null)
+  const codeContainerRef = useRef<HTMLDivElement>(null);
 
   // Typing effect
   useEffect(() => {
     if (typedText.length < currentQuery.length) {
       const timeout = setTimeout(() => {
-        setTypedText(currentQuery.substring(0, typedText.length + 1))
+        setTypedText(currentQuery.substring(0, typedText.length + 1));
 
         // Auto-scroll as text is typed
         if (codeContainerRef.current) {
-          codeContainerRef.current.scrollTop = codeContainerRef.current.scrollHeight
+          codeContainerRef.current.scrollTop =
+            codeContainerRef.current.scrollHeight;
         }
-      }, typingSpeed)
+      }, typingSpeed);
 
-      return () => clearTimeout(timeout)
+      return () => clearTimeout(timeout);
     } else {
-      setIsTypingComplete(true)
+      setIsTypingComplete(true);
 
       // Move to next query after a delay
       const nextQueryTimeout = setTimeout(() => {
-        setCurrentTextIndex((prevIndex) => (prevIndex + 1) % flatteringQueries.length)
-        setTypedText("")
-        setIsTypingComplete(false)
-      }, 3000)
+        setCurrentTextIndex(
+          (prevIndex) => (prevIndex + 1) % flatteringQueries.length
+        );
+        setTypedText("");
+        setIsTypingComplete(false);
+      }, 3000);
 
-      return () => clearTimeout(nextQueryTimeout)
+      return () => clearTimeout(nextQueryTimeout);
     }
-  }, [typedText, currentQuery])
+  }, [typedText, currentQuery]);
 
   // Loading dots animation
   useEffect(() => {
     const interval = setInterval(() => {
       setLoadingDots((prev) => {
-        if (prev.length >= 3) return ""
-        return prev + "."
-      })
-    }, 500)
+        if (prev.length >= 3) return "";
+        return prev + ".";
+      });
+    }, 500);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   // Get current flattering message
-  const currentMessage = flatteringMessages[currentTextIndex % flatteringMessages.length]
+  const currentMessage =
+    flatteringMessages[currentTextIndex % flatteringMessages.length];
 
   return (
-    <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4">
-      {/* Code editor container */}
-      <motion.div
-        className="w-full max-w-2xl bg-[#1E293B] rounded-lg overflow-hidden shadow-xl border border-[#334155]"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+    <div className="fixed inset-0 z-50 flex items-center justify-around bg-black/30 backdrop-blur-sm">
+      {/* Lottie Animation */}
+      <div
+        style={{
+          width: "40%",
+          background: "rgba(73,69,255,0.08)",
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "2rem",
+        }}
       >
-        {/* Editor header */}
-        <div className="bg-[#1E293B] border-b border-[#334155] p-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            </div>
-            <span className="text-[#94A3B8] text-sm ml-2">query.sql</span>
-          </div>
-          <div className="text-[#94A3B8] text-xs">SQL Query</div>
+        <Lottie
+          animationData={typingAnimation}
+          loop={true}
+          style={{ width: "100%", height: "100%" }}
+        />
+      </div>
+      {/* Modal Loader Box */}
+      <div
+        className="flex flex-col items-center justify-center h-fit"
+        style={{
+          width: "min(60vw, 600px)",
+          minWidth: "320px",
+          minHeight: "50vh",
+          background: "rgba(24,24,27,0.95)",
+          borderRadius: "2rem",
+          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+          padding: "2rem",
+        }}
+      >
+        {/* Friendly message */}
+        <div className="mb-4 text-2xl font-bold text-gray-300 text-center">
+          Generating your schema with AI...
         </div>
-
-        {/* Line numbers and code */}
-        <div className="flex">
-          {/* Line numbers */}
-          <div className="bg-[#1E293B] text-[#64748B] p-4 text-right select-none font-mono text-sm">
-            {Array.from({ length: currentQuery.split("\n").length }).map((_, i) => (
-              <div key={i} className="leading-6">
-                {i + 1}
+        <div className="mb-6 text-gray-100 text-center max-w-lg">
+          Please wait while our AI analyzes your input and creates a tailored
+          schema for your project.
+        </div>
+        <motion.div
+          className="w-full max-w-2xl bg-[#18181b] rounded-lg shadow-lg border border-[#334155] mb-8 overflow-hidden"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Code editor area */}
+          <div
+            ref={codeContainerRef}
+            className="bg-[#0F172A] p-6 font-mono text-sm text-[#38BDF8] h-48 overflow-y-auto"
+            style={{ minHeight: "12rem", maxHeight: "12rem" }}
+          >
+            {typedText.split("\n").map((line, i) => (
+              <div key={i} className="min-h-[24px]">
+                {highlightSQL(line)}
               </div>
             ))}
+            {!isTypingComplete && (
+              <motion.span
+                className="inline-block w-2 h-4 bg-white ml-1 align-middle"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Number.POSITIVE_INFINITY,
+                }}
+              />
+            )}
           </div>
-
-          {/* Code content */}
-          <div ref={codeContainerRef} className="bg-[#0F172A] p-4 font-mono text-sm overflow-auto flex-1 max-h-[300px]">
-            <div className="text-white leading-6">
-              {typedText.split("\n").map((line, i) => (
-                <div key={i} className="min-h-[24px]">
-                  <span className="text-[#38BDF8]">
-                    {line.includes("SELECT") && line.split("SELECT")[0]}
-                    {line.includes("SELECT") && <span className="text-[#F472B6]">SELECT</span>}
-                    {line.includes("SELECT") && line.split("SELECT")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("FROM") && line.split("FROM")[0].replace("SELECT", "")}
-                    {line.includes("FROM") && <span className="text-[#F472B6]">FROM</span>}
-                    {line.includes("FROM") && line.split("FROM")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("WHERE") && line.split("WHERE")[0].replace("SELECT", "").replace("FROM", "")}
-                    {line.includes("WHERE") && <span className="text-[#F472B6]">WHERE</span>}
-                    {line.includes("WHERE") && line.split("WHERE")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("UPDATE") && line.split("UPDATE")[0]}
-                    {line.includes("UPDATE") && <span className="text-[#F472B6]">UPDATE</span>}
-                    {line.includes("UPDATE") && line.split("UPDATE")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("SET") && line.split("SET")[0].replace("UPDATE", "")}
-                    {line.includes("SET") && <span className="text-[#F472B6]">SET</span>}
-                    {line.includes("SET") && line.split("SET")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("CREATE") && line.split("CREATE")[0]}
-                    {line.includes("CREATE") && <span className="text-[#F472B6]">CREATE</span>}
-                    {line.includes("CREATE") && line.split("CREATE")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("VIEW") && line.split("VIEW")[0].replace("CREATE", "")}
-                    {line.includes("VIEW") && <span className="text-[#F472B6]">VIEW</span>}
-                    {line.includes("VIEW") && line.split("VIEW")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("AS") && line.split("AS")[0].replace("CREATE", "").replace("VIEW", "")}
-                    {line.includes("AS") && <span className="text-[#F472B6]">AS</span>}
-                    {line.includes("AS") && line.split("AS")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("CASE") && line.split("CASE")[0]}
-                    {line.includes("CASE") && <span className="text-[#F472B6]">CASE</span>}
-                    {line.includes("CASE") && line.split("CASE")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("WHEN") && line.split("WHEN")[0].replace("CASE", "")}
-                    {line.includes("WHEN") && <span className="text-[#F472B6]">WHEN</span>}
-                    {line.includes("WHEN") && line.split("WHEN")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("THEN") && line.split("THEN")[0].replace("WHEN", "")}
-                    {line.includes("THEN") && <span className="text-[#F472B6]">THEN</span>}
-                    {line.includes("THEN") && line.split("THEN")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("ELSE") && line.split("ELSE")[0]}
-                    {line.includes("ELSE") && <span className="text-[#F472B6]">ELSE</span>}
-                    {line.includes("ELSE") && line.split("ELSE")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("END") && line.split("END")[0]}
-                    {line.includes("END") && <span className="text-[#F472B6]">END</span>}
-                    {line.includes("END") && line.split("END")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("AND") && line.split("AND")[0]}
-                    {line.includes("AND") && <span className="text-[#F472B6]">AND</span>}
-                    {line.includes("AND") && line.split("AND")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("OR") && !line.includes("ORDER") && line.split("OR")[0]}
-                    {line.includes("OR") && !line.includes("ORDER") && <span className="text-[#F472B6]">OR</span>}
-                    {line.includes("OR") && !line.includes("ORDER") && line.split("OR")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("IN") && !line.includes("INT") && line.split("IN")[0]}
-                    {line.includes("IN") && !line.includes("INT") && <span className="text-[#F472B6]">IN</span>}
-                    {line.includes("IN") && !line.includes("INT") && line.split("IN")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {line.includes("NOT") && line.split("NOT")[0]}
-                    {line.includes("NOT") && <span className="text-[#F472B6]">NOT</span>}
-                    {line.includes("NOT") && line.split("NOT")[1]}
-                  </span>
-
-                  <span className="text-[#38BDF8]">
-                    {!line.includes("SELECT") &&
-                      !line.includes("FROM") &&
-                      !line.includes("WHERE") &&
-                      !line.includes("UPDATE") &&
-                      !line.includes("SET") &&
-                      !line.includes("CREATE") &&
-                      !line.includes("VIEW") &&
-                      !line.includes("AS") &&
-                      !line.includes("CASE") &&
-                      !line.includes("WHEN") &&
-                      !line.includes("THEN") &&
-                      !line.includes("ELSE") &&
-                      !line.includes("END") &&
-                      !line.includes("AND") &&
-                      !line.includes("OR") &&
-                      !line.includes("IN") &&
-                      !line.includes("NOT") &&
-                      line}
-                  </span>
-
-                  {/* Highlight strings in quotes */}
-                  {line.includes('"') &&
-                    line.split('"').map((part, index) =>
-                      index % 2 === 1 ? (
-                        <span key={index} className="text-[#A5F3FC]">
-                          "{part}"
-                        </span>
-                      ) : null,
-                    )}
-                </div>
-              ))}
-              {!isTypingComplete && (
-                <motion.span
-                  className="inline-block w-2 h-4 bg-white ml-1"
-                  animate={{ opacity: [1, 0, 1] }}
-                  transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }}
-                />
-              )}
-            </div>
+          {/* Terminal output */}
+          <div className="bg-[#0F172A] border-t border-[#334155] p-3 text-[#94A3B8] font-mono text-sm">
+            {isTypingComplete ? (
+              <div className="text-green-400">
+                Query executed successfully. Searching database...
+              </div>
+            ) : (
+              <div>Typing query...</div>
+            )}
           </div>
-        </div>
-
-        {/* Terminal output */}
-        <div className="bg-[#0F172A] border-t border-[#334155] p-3 text-[#94A3B8] font-mono text-sm">
-          {isTypingComplete ? (
-            <div className="text-green-400">Query executed successfully. Searching database...</div>
-          ) : (
-            <div>Typing query...</div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Loading message */}
-      <motion.div
-        className="mt-8 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="flex items-center justify-center mb-2">
-          <Loader2 className="w-5 h-5 text-[#38BDF8] mr-2 animate-spin" />
-          <p className="text-white text-lg font-medium">
-            {currentMessage}
-            {loadingDots}
+        </motion.div>
+        {/* Loading message */}
+        <motion.div
+          className="mt-8 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="flex items-center justify-center mb-2">
+            <Loader2 className="w-5 h-5 text-[#38BDF8] mr-2 animate-spin" />
+            <p className="text-white text-lg font-medium">
+              {currentMessage}
+              {loadingDots}
+            </p>
+          </div>
+          <p className="text-[#94A3B8] text-sm">
+            This might take a moment. Exceptional talent deserves a worthy
+            match.
           </p>
-        </div>
-        <p className="text-[#94A3B8] text-sm">This might take a moment. Exceptional talent deserves a worthy match.</p>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
-  )
+  );
 }
