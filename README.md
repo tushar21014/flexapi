@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlexApp
 
-## Getting Started
+FlexApp is a powerful and flexible application designed to streamline content management and schema generation. It combines a robust backend built with Spring Boot and a dynamic frontend powered by Next.js to deliver a seamless user experience.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Content Management**: Easily manage and organize content types and entries.
+- **Schema Generation**: Generate and manage schemas dynamically.
+- **User Authentication**: Secure login and signup functionality.
+- **API Documentation**: Integrated API documentation for developers.
+- **Responsive Design**: Optimized for desktop and mobile devices.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Frontend
+- **Framework**: Next.js
+- **Language**: TypeScript
+- **Styling**: CSS Modules
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Backend
+- **Framework**: Spring Boot
+- **Language**: Java
+- **Database**: PostgreSQL
+- **Authentication**: JWT
 
-## Learn More
+## Installation and Setup
 
-To learn more about Next.js, take a look at the following resources:
+### Frontend
+1. Navigate to the `flexapi` directory:
+   ```bash
+   cd flexapi
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Backend
+1. Navigate to the `flexApi-backend` directory:
+   ```bash
+   cd flexApi-backend
+   ```
+2. Build the project:
+   ```bash
+   ./mvnw clean install
+   ```
+3. Run the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+4. The backend server will be available at [http://localhost:8080](http://localhost:8080).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage Instructions
 
-## Deploy on Vercel
+1. **Login/Signup**: Access the authentication pages to create an account or log in.
+2. **Content Management**: Navigate to the dashboard to manage content types and entries.
+3. **Schema Generation**: Use the schema generator to create and update schemas dynamically.
+4. **API Documentation**: Explore the integrated API documentation for backend endpoints.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contribution Guidelines
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+We welcome contributions to FlexApp! Please follow these steps:
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Submit a pull request with a detailed description of your changes.
+
+## Screenshots
+
+Here are some screenshots showcasing the application's features:
+
+### Login Page
+![Login Page](Screenshots/Login.png)
+
+### Dashboard
+![Dashboard](Screenshots/Dashboard.png)
+
+### Schema Management
+![Schema Management](Screenshots/SchemaManager.png)
+
+### Manual Schema Builder
+![Manual Schema Builder](Screenshots/ManualSchemaBuilder.png)
+
+### Schema Types
+![Schema Types](Screenshots/SchemaTypes.png)
+
+### AI Schema Generator
+![AI Schema Generator](Screenshots/AiSchemaGenerator.png)
+
+
+## License
+
+FlexApp is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
