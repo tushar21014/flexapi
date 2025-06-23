@@ -128,24 +128,28 @@ WHERE obsolete = TRUE;`,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-around bg-black/30 backdrop-blur-sm">
+      
       {/* Lottie Animation */}
-      <div
-        style={{
-          width: "40%",
-          background: "rgba(73,69,255,0.08)",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <Lottie
-          animationData={typingAnimation}
-          loop={true}
-          style={{ width: "100%", height: "100%" }}
-        />
+      <div className="absolute w-full h-full flex items-center justify-center -z-10">
+        <div
+          style={{
+            width: "40%",
+            background: "rgba(73,69,255,0.08)",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "2rem",
+          }}
+        >
+          <Lottie
+            animationData={typingAnimation}
+            loop={true}
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
       </div>
+
       {/* Modal Loader Box */}
       <div
         className="flex flex-col items-center justify-center h-fit"
@@ -153,17 +157,17 @@ WHERE obsolete = TRUE;`,
           width: "min(60vw, 600px)",
           minWidth: "320px",
           minHeight: "50vh",
-          background: "rgba(24,24,27,0.95)",
+          background: "rgba(24,24,27,0.92)",
           borderRadius: "2rem",
           boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
           padding: "2rem",
         }}
       >
         {/* Friendly message */}
-        <div className="mb-4 text-2xl font-bold text-gray-300 text-center">
+        <div className="mb-4 text-2xl font-bold text-gray-100 text-center">
           Generating your schema with AI...
         </div>
-        <div className="mb-6 text-gray-100 text-center max-w-lg">
+        <div className="mb-6 text-gray-300 text-center max-w-lg">
           Please wait while our AI analyzes your input and creates a tailored
           schema for your project.
         </div>
