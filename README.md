@@ -1,6 +1,6 @@
-# FlexApp
+# FlexiApp
 
-FlexApp is a powerful and flexible application designed to streamline content management and schema generation. It combines a robust backend built with Spring Boot and a dynamic frontend powered by Next.js to deliver a seamless user experience.
+FlexiApp is a powerful and flexible application designed to streamline content management and schema generation. It combines a robust backend built with Spring Boot and a dynamic frontend powered by Next.js to deliver a seamless user experience.
 
 ## Features
 
@@ -64,7 +64,7 @@ FlexApp is a powerful and flexible application designed to streamline content ma
 
 ## Contribution Guidelines
 
-We welcome contributions to FlexApp! Please follow these steps:
+We welcome contributions to FlexiApp! Please follow these steps:
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
 3. Submit a pull request with a detailed description of your changes.
@@ -94,4 +94,4 @@ Here are some screenshots showcasing the application's features:
 
 ## License
 
-FlexApp is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+FlexiApp is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
