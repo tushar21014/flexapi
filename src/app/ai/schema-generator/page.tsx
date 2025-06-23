@@ -9,7 +9,17 @@ import { Brain } from "lucide-react"
 import LoadingBattle from "@/components/loading"
 import { Table } from "@/components/ui/table"
 
+// Add at the top, after imports:
 import { Mail, Hash, FileText, Key, List, FileText as RichTextIcon } from "lucide-react"
+
+const FIELD_TYPE_MAP: Record<string, { icon: JSX.Element; label: string; desc: string }> = {
+  String: { icon: <FileText className="w-5 h-5 text-blue-500" />, label: "Text", desc: "Small or long text" },
+  Email: { icon: <Mail className="w-5 h-5 text-orange-500" />, label: "Email", desc: "Email field" },
+  Number: { icon: <Hash className="w-5 h-5 text-red-500" />, label: "Number", desc: "Numbers (integer, float, decimal)" },
+  Password: { icon: <Key className="w-5 h-5 text-orange-500" />, label: "Password", desc: "Password field" },
+  Enum: { icon: <List className="w-5 h-5 text-pink-500" />, label: "Enumeration", desc: "List of values" },
+  RichText: { icon: <RichTextIcon className="w-5 h-5 text-orange-500" />, label: "Rich Text", desc: "Rich text editor" },
+}
 
 
 export default function AISchemaGeneratorPage() {
@@ -18,16 +28,7 @@ export default function AISchemaGeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [schemas, setSchemas] = useState<any[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  
-  const FIELD_TYPE_MAP: Record<string, { icon: JSX.Element; label: string; desc: string }> = {
-    String: { icon: <FileText className="w-5 h-5 text-blue-500" />, label: "Text", desc: "Small or long text" },
-    Email: { icon: <Mail className="w-5 h-5 text-orange-500" />, label: "Email", desc: "Email field" },
-    Number: { icon: <Hash className="w-5 h-5 text-red-500" />, label: "Number", desc: "Numbers (integer, float, decimal)" },
-    Password: { icon: <Key className="w-5 h-5 text-orange-500" />, label: "Password", desc: "Password field" },
-    Enum: { icon: <List className="w-5 h-5 text-pink-500" />, label: "Enumeration", desc: "List of values" },
-    RichText: { icon: <RichTextIcon className="w-5 h-5 text-orange-500" />, label: "Rich Text", desc: "Rich text editor" },
-  }
-  
+
   useEffect(() => {
     const textarea = textareaRef.current
     if (textarea) {
@@ -64,31 +65,33 @@ export default function AISchemaGeneratorPage() {
     }
   }
 
-  const handleApprove = async (schema: any) => {
+  const handleApprove = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/processSchema", {
+      const response = await fetch("http://localhost:8080/api/store-schemas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ ...schema, decision: "approve" }),
+        body: JSON.stringify({ schemas: schemas }),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to approve schema")
+        throw new Error("Failed to save schemas")
       }
 
-      alert("Schema approved and saved successfully!")
-      setSchemas(schemas.filter((s) => s.name !== schema.name))
+      alert("Schemas saved successfully!")
+      router.push("/content-manager")
     } catch (error) {
       console.error(error)
-      alert("Error approving schema. Please try again.")
+      alert("Error saving schemas. Please try again.")
     }
   }
 
-  const handleReject = (schemaName: string) => {
-    setSchemas(schemas.filter((s) => s.name !== schemaName))
-    alert("Schema rejected successfully!")
+  const handleReject = () => {
+    setSchemas([])
+    alert("Schemas rejected successfully!")
+    location.reload()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -164,70 +167,83 @@ export default function AISchemaGeneratorPage() {
               <Table>
                 <thead>
                   <tr>
-                    <th className="text-left align-top w-40">Name</th>
-                    <th className="text-left align-top">Fields</th>
+                    <th>Name</th>
+                    <th>Fields</th>
                   </tr>
                 </thead>
                 <tbody>
                   {schemas.map((schema) => (
-                    <tr key={schema.name} className="align-top">
-                      <td className="py-4 font-semibold">{schema.name}</td>
+                    <tr key={schema.name}>
+                      <td>{schema.name}</td>
                       <td className="py-4">
                         <div
-                          className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 overflow-x-auto max-w-md text-xs"
-                          style={{ maxHeight: 200 }}
+                          className="grid grid-cols-2 h-34 overflow-y-scroll gap-2 max-w-md bg-black/20 p-2 rounded-lg "
+                          style={{
+                            // Scrollbar styles
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "#a0aec0 #edf2f7",
+                            overflowY: "auto",
+                            gap: "0.5rem",
+                            borderRadius: "0.375rem",
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                            transition: "background-color 0.2s ease",
+                            cursor: "pointer",
+                          }}
                         >
-                          <td className="py-4">
-                            <div className="grid grid-cols-2 gap-2 w-full max-w-md">
-                              {Object.entries(schema.fields).map(
-                                ([fieldName, field]) => {
-                                  // Guess type for icon mapping
-                                  const typeKey =
-                                    field.type === "String" && field.unique
-                                      ? "Email"
-                                      : field.type;
-                                  const fieldType =
-                                    FIELD_TYPE_MAP[typeKey] ||
-                                    FIELD_TYPE_MAP.String;
-                                  return (
-                                    <div
-                                      key={fieldName}
-                                      className="flex w-full items-center gap-3 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-800"
-                                    >
-                                      {fieldType.icon}
-                                      <div>
-                                        <div className="font-medium">
-                                          {fieldName}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {fieldType.label}
-                                          {field.required ? " • Required" : ""}
-                                          {field.unique ? " • Unique" : ""}
-                                        </div>
-                                      </div>
+                          {Object.entries(schema.fields).map(
+                            ([fieldName, field]) => {
+                              // Guess type for icon mapping
+                              const typeKey =
+                                field.type === "String" && field.unique
+                                  ? "Email"
+                                  : field.type;
+                              const fieldType =
+                                FIELD_TYPE_MAP[typeKey] ||
+                                FIELD_TYPE_MAP.String;
+                              return (
+                                <div
+                                  key={fieldName}
+                                  className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-800"
+                                >
+                                  {fieldType.icon}
+                                  <div>
+                                    <div className="font-medium">
+                                      {fieldName}
                                     </div>
-                                  );
-                                }
-                              )}
-                            </div>
-                          </td>
+                                    <div className="text-xs text-gray-500">
+                                      {fieldType.label}
+                                      {field.required ? " • Required" : ""}
+                                      {field.unique ? " • Unique" : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
                         </div>
                       </td>
-
                     </tr>
                   ))}
-
                 </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={3} className="text-center text-gray-500 py-4">
-                      Generated {schemas.length} schema
-                      {schemas.length > 1 ? "s" : ""}
-                    </td>
-                  </tr>
-                </tfoot>
-
               </Table>
+            )}
+
+            {schemas.length > 0 && (
+              <div className="flex justify-end space-x-4 mt-4">
+                <Button
+                  onClick={handleApprove}
+                  className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg"
+                >
+                  Approve All
+                </Button>
+                <Button
+                  onClick={handleReject}
+                  className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg"
+                >
+                  Reject All
+                </Button>
+              </div>
             )}
           </div>
         </main>

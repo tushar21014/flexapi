@@ -21,10 +21,11 @@ interface Field {
   type: string
   required: boolean
   unique: boolean
-  primaryKey?: boolean 
+  primaryKey?: boolean
   relatedContentType?: string,
   selectedRelation?: string, // "oneToOne", "oneToMany", "manyToMany"
   description?: string
+  color?: string // Added color property
 }
 
 interface ContentType {
@@ -45,7 +46,7 @@ export default function ContentTypeBuilderPage() {
   const [isFieldDialogOpen, setIsFieldDialogOpen] = useState(false)
   const [apiKey, setApiKey] = useState("")
   const [isApiDialogOpen, setIsApiDialogOpen] = useState(false)
-  const [existingContentTypes, setExistingContentTypes] = useState<ContentType[]>()
+  const [existingContentTypes, setExistingContentTypes] = useState<ContentType[] | undefined>()
   const api = process.env.NEXT_PUBLIC_SCHEMA_URL
 
 
@@ -97,7 +98,21 @@ export default function ContentTypeBuilderPage() {
       alert("You must be logged in.")
       return
     }
-
+  
+    // Validate required fields
+    if (!contentType.displayName.trim()) {
+      toast.error("Display Name cannot be empty.")
+      return
+    }
+    if (!contentType.name.trim()) {
+      toast.error("API ID cannot be empty.")
+      return
+    }
+    if (fields.length === 0) {
+      toast.error("Schema must have at least one field.")
+      return
+    }
+  
     // Build fields object from array of fields
     const fieldsObj = fields.reduce((acc: { [key: string]: any }, field) => {
       acc[field.name] = {
@@ -110,15 +125,15 @@ export default function ContentTypeBuilderPage() {
       }
       return acc
     }, {})
-
+  
     const payload = {
       name: contentType.name,
       description: contentType.description,
       fields: fieldsObj
     }
-
+  
     console.log("Sending payload:", payload)
-
+  
     const res = await fetch(`${api}/createSchema`, {
       method: "POST",
       headers: {
@@ -127,14 +142,14 @@ export default function ContentTypeBuilderPage() {
       },
       body: JSON.stringify(payload)
     })
-
+  
     console.log("Response status:", res)
     if (res.ok) {
       const result = await res.json()
       console.log("Schema created successfully:", result["api"])
       setApiKey(result["api"] || "");
       setIsApiDialogOpen(true)
-
+  
       // router.push("/content-types")
     } else {
       const error = await res.json()
@@ -144,6 +159,7 @@ export default function ContentTypeBuilderPage() {
   }
 
   const getRelatedContentTypeName = (id: string) => {
+    if (!existingContentTypes) return id
     const contentType = existingContentTypes.find((ct) => ct.id === id)
     return contentType ? contentType.displayName : id
   }
@@ -234,7 +250,10 @@ export default function ContentTypeBuilderPage() {
                       <DialogTitle>Select a field type</DialogTitle>
                     </DialogHeader>
                     <div className="py-4">
-                      <FieldTypeSelector onSelectField={handleAddField} contentTypes={existingContentTypes} />
+                      <FieldTypeSelector
+                        onSelectField={handleAddField}
+                        contentTypes={existingContentTypes || []}
+                      />
                     </div>
                   </DialogContent>
                 </Dialog>
