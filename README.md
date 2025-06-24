@@ -1,4 +1,4 @@
-# FlexApp
+# Flex API 
 
 FlexApp is a powerful and flexible application designed to streamline content management and schema generation. It combines a robust backend built with Spring Boot and a dynamic frontend powered by Next.js to deliver a seamless user experience.
 
