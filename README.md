@@ -3,12 +3,10 @@
 FlexApp is a powerful and flexible application designed to streamline content management and schema generation. It combines a robust backend built with Spring Boot and a dynamic frontend powered by Next.js to deliver a seamless user experience.
 
 ## Features
-
-- **Content Management**: Easily manage and organize content types and entries.
-- **Schema Generation**: Generate and manage schemas dynamically.
-- **User Authentication**: Secure login and signup functionality.
-- **API Documentation**: Integrated API documentation for developers.
-- **Responsive Design**: Optimized for desktop and mobile devices.
+- **Versioning of DB**: Just like git but for databases(data and structure).
+- **Dynamic API Generation**: Just create architecture it will generate endpoints.
+- **AI Architecture**: Generate scalable and complex architecture
+- **Delegated API**: User can delegate api acess. 
 
 ## Tech Stack
 
